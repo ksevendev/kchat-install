@@ -39,13 +39,13 @@ abaixo, é super simples de instalar, basta ter muita atenção.
 
 ## 04 - Execute os comandos:
     
-    git clone https://github.com/ksevendev/KChatInstall.git
+    git clone https://github.com/ksevendev/kchat-install.git
 
     **Login: ksevendev
     **Senha: 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
 
     Dê permissão root: 
-        chmod -R 777 KChatInstall
+        chmod -R 777 kchat-install
 
     Depois acesse a pasta do instalador:
         cd KChatInstall
@@ -70,7 +70,7 @@ abaixo, é super simples de instalar, basta ter muita atenção.
 
     - 05.1 - Digite a senha do banco de dados (PostGres) -> Sem caracteres especiais
     - 05.2 - Digite o link do Código-Fonte
-        - https://github.com/ksevendev/KChat.git
+        - https://github.com/ksevendev/kchat.git
     - 05.3 - Digite o nome da empresa (instancia) -> sem espaço, caracteres especiais e letras maiúsculas (*Cada instancia um nome diferente. )
     - 05.4 - Digite a quantidade de conexões (Para dono 9999)
     - 05.5 - Digite a quantidade de usuários atendentes (Para dono 9999)
