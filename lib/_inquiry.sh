@@ -540,6 +540,39 @@ install_aapanel() {
   wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && sudo bash install.sh aapanel
 }
 
+enable_root_ssh() {
+  print_banner
+  printf "${WHITE}🔑 Configurando senha para root e habilitando login via SSH...${GRAY_LIGHT}\n\n"
+
+  # Solicita nova senha para root
+  printf "${CYAN}Digite a nova senha para o usuário root:${GRAY_LIGHT}\n"
+  passwd root
+
+  # Faz backup do sshd_config
+  BACKUP_FILE="/etc/ssh/sshd_config.bak-$(date +%F_%H-%M-%S)"
+  cp /etc/ssh/sshd_config "$BACKUP_FILE"
+  printf "${GREEN}✔ Backup criado em: $BACKUP_FILE${GRAY_LIGHT}\n"
+
+  # Altera configuração para permitir login root
+  if grep -q "^PermitRootLogin" /etc/ssh/sshd_config; then
+    sed -i 's/^PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+  else
+    echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
+  fi
+  printf "${GREEN}✔ Configuração do SSH atualizada para permitir login root${GRAY_LIGHT}\n"
+
+  # Reinicia serviço SSH
+  if command -v systemctl &> /dev/null; then
+    systemctl restart ssh || systemctl restart sshd
+  else
+    /etc/init.d/ssh restart || service ssh restart
+  fi
+  printf "${GREEN}🚀 Login root via SSH habilitado com sucesso!${GRAY_LIGHT}\n"
+  
+  printf "\nPressione Enter para voltar ao menu..."
+  read -r
+}
+
 inquiry_options() {
   
   print_banner
@@ -563,7 +596,9 @@ inquiry_options() {
   printf "${CYAN}   [12] 🛡️ Checar ambiente para instalação e uso${GRAY_LIGHT}\n"
   printf "${CYAN}   [13] 📊 Verificar requisitos mínimos da VPS${GRAY_LIGHT}\n"
   printf "${YELLOW}   -------------------${GRAY_LIGHT}\n"
-  printf "${RED}   [14] SAIR ${GRAY_LIGHT}\n"
+  printf "${MAGENTA}   [14] 🔑 Habilitar login root via SSH${GRAY_LIGHT}\n"
+  printf "${YELLOW}   -------------------${GRAY_LIGHT}\n"
+  printf "${RED}   [15] SAIR ${GRAY_LIGHT}\n"
   read -p "> " option
 
   case "${option}" in
@@ -624,9 +659,14 @@ inquiry_options() {
       check_vps_requirements
       inquiry_options
       ;;
+    15)
+      enable_root_ssh
+      inquiry_options
+      ;;
     14)
       printf "${RED}Saindo... Até a próxima!${GRAY_LIGHT}\n"
-      exit ;;
+      exit 
+      ;;
     *) 
       printf "${YELLOW}Opção inválida. Saindo... Até a próxima!${GRAY_LIGHT}\n"
       exit ;;
