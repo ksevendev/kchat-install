@@ -396,6 +396,79 @@ check_all_dependencies() {
   read -r
 }
 
+check_environment() {
+  print_banner
+  printf "${WHITE}🛡️ Verificando ambiente para instalação e uso...${GRAY_LIGHT}\n\n"
+
+  # Reaproveita check_all_dependencies para dependências
+  check_all_dependencies
+
+  # Verifica se portas essenciais estão livres (exemplo 80, 443, 3000, 4000)
+  local ports=(80 443 3000 4000)
+  for port in "${ports[@]}"; do
+    if sudo lsof -i:"$port" &>/dev/null; then
+      printf "${RED}⚠️ Porta %d já está em uso. Pode causar conflito.${GRAY_LIGHT}\n" "$port"
+    else
+      printf "${GREEN}✔ Porta %d está livre.${GRAY_LIGHT}\n" "$port"
+    fi
+  done
+
+  # Verifica status dos serviços (nginx, mysql, redis)
+  for service in nginx mysql redis; do
+    if systemctl is-active --quiet "$service"; then
+      printf "${GREEN}✔ Serviço %s está ativo${GRAY_LIGHT}\n" "$service"
+    else
+      printf "${YELLOW}⚠️ Serviço %s não está ativo (recomendado ativar)${GRAY_LIGHT}\n" "$service"
+    fi
+  done
+
+  printf "\nPressione Enter para voltar ao menu..."
+  read -r
+}
+
+check_vps_requirements() {
+  print_banner
+  printf "${WHITE}📊 Verificando requisitos mínimos da VPS...${GRAY_LIGHT}\n\n"
+
+  # Checar CPU cores
+  local cpu_cores
+  cpu_cores=$(nproc)
+  printf "🧮 Cores de CPU disponíveis: %d\n" "$cpu_cores"
+  if (( cpu_cores < 2 )); then
+    printf "${YELLOW}⚠️ Recomenda-se ao menos 2 cores para bom desempenho.${GRAY_LIGHT}\n"
+  else
+    printf "${GREEN}✔ CPU atende o requisito mínimo.${GRAY_LIGHT}\n"
+  fi
+
+  # Checar RAM disponível em MB
+  local ram_mb
+  ram_mb=$(free -m | awk '/^Mem:/ {print $2}')
+  printf "💾 Memória RAM total: %d MB\n" "$ram_mb"
+  if (( ram_mb < 2048 )); then
+    printf "${YELLOW}⚠️ Recomendado ao menos 2GB de RAM para KChat.${GRAY_LIGHT}\n"
+  else
+    printf "${GREEN}✔ RAM atende o requisito mínimo.${GRAY_LIGHT}\n"
+  fi
+
+  # Checar espaço em disco na partição root (em GB)
+  local disk_gb
+  disk_gb=$(df -BG / | tail -1 | awk '{print $4}' | sed 's/G//')
+  printf "🗄️ Espaço livre em disco (raiz): %d GB\n" "$disk_gb"
+  if (( disk_gb < 10 )); then
+    printf "${YELLOW}⚠️ Recomenda-se pelo menos 10GB livres para instalação.${GRAY_LIGHT}\n"
+  else
+    printf "${GREEN}✔ Espaço em disco atende o requisito mínimo.${GRAY_LIGHT}\n"
+  fi
+
+  # Checar versão do sistema
+  local os_version
+  os_version=$(lsb_release -d | awk -F"\t" '{print $2}')
+  printf "🖥️ Sistema operacional: %s\n" "$os_version"
+
+  printf "\nPressione Enter para voltar ao menu..."
+  read -r
+}
+
 get_urls() {
   get_mysql_root_password
   get_link_git
@@ -455,6 +528,18 @@ install_without_aapanel() {
   printf "${GREEN}✅ Instalação sem AAPanel concluída com sucesso!${GRAY_LIGHT}\n"
 }
 
+upgrade_vps() {
+  print_banner
+  printf "${WHITE} 🚀Atualizando servidor...${GRAY_LIGHT}\n\n"
+  sudo apt update && sudo apt upgrade -y
+}
+
+install_aapanel() {
+  print_banner
+  printf "${WHITE} 🚀 Iniciando instalação do AAPanel...${GRAY_LIGHT}\n\n"
+  wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && sudo bash install.sh aapanel
+}
+
 inquiry_options() {
   
   print_banner
@@ -475,14 +560,22 @@ inquiry_options() {
   printf "${BLUE}   [9] ✅ Verificar dependências básicas${GRAY_LIGHT}\n"
   printf "${BLUE}   [10] 📦 Verificar e instalar libs e dependências extras${GRAY_LIGHT}\n"
   printf "${BLUE}   [11] 🔧 Verificar e instalar todas as dependências (básicas + extras)${GRAY_LIGHT}\n"
+  printf "${CYAN}   [12] 🛡️ Checar ambiente para instalação e uso${GRAY_LIGHT}\n"
+  printf "${CYAN}   [13] 📊 Verificar requisitos mínimos da VPS${GRAY_LIGHT}\n"
+  printf "${YELLOW}   -------------------${GRAY_LIGHT}\n"
+  printf "${RED}   [14] SAIR ${GRAY_LIGHT}\n"
   read -p "> " option
 
   case "${option}" in
     0)
-      sudo apt update && sudo apt upgrade -y
+      upgrade_vps
+      inquiry_options
+      #exit 
       ;;
     1)
-      wget -O install.sh http://www.aapanel.com/script/install-ubuntu_6.0_en.sh && sudo bash install.sh aapanel
+      install_aapanel
+      inquiry_options
+      #exit 
       ;;
     2)
       get_urls 
@@ -523,6 +616,17 @@ inquiry_options() {
       check_all_dependencies
       inquiry_options
       ;;
+    12)
+      check_environment
+      inquiry_options
+      ;;
+    13)
+      check_vps_requirements
+      inquiry_options
+      ;;
+    14)
+      printf "${RED}Saindo... Até a próxima!${GRAY_LIGHT}\n"
+      exit ;;
     *) 
       printf "${YELLOW}Opção inválida. Saindo... Até a próxima!${GRAY_LIGHT}\n"
       exit ;;

@@ -24,9 +24,6 @@ print_banner() {
   local kernel=$(uname -r)
   local uptime=$(uptime -p)
   local cpu=$(lscpu | grep "Model name:" | sed 's/Model name:\s*//')
-  local mem_total=$(free -h | awk '/Mem:/ {print $2}')
-  local disk_usage=$(df -h / | awk 'NR==2 {print $5}')
-  local ip_addr=$(hostname -I | awk '{print $1}')
 
   printf "${RED}";
   printf "##  ###  ######   ##  ##   ######   ######\n";
@@ -37,7 +34,7 @@ print_banner() {
   printf "##  ###  ######   ##  ##   ##  ##     ##\n";
 
   printf "\n"
-  printf "------------------------------------------------------------------------------"
+  printf "${YELLOW}------------------------------------------------------------------------------${GRAY_LIGHT}\n"
   printf "\n"
   
   # Mostra as infos coletadas
@@ -46,15 +43,9 @@ print_banner() {
   printf "${YELLOW}Kernel:${NC}         %s\n" "$kernel"
   printf "${YELLOW}Uptime:${NC}         %s\n" "$uptime"
   printf "${YELLOW}CPU:${NC}            %s\n" "$cpu"
-  printf "${YELLOW}Memória Total:${NC}  %s\n" "$mem_total"
-  printf "${YELLOW}Uso Disco /:${NC}    %s\n" "$disk_usage"
-  printf "${YELLOW}IP Principal:${NC}   %s\n" "$ip_addr"
 
   printf "\n"
-  printf "------------------------------------------------------------------------------"
-  printf "\n"
-
-  printf "${CYAN_LIGHT}2025 @ Todos os direitos reservados a https://kseven.dev.br${NC}\n\n"
+  printf "${YELLOW}------------------------------------------------------------------------------${GRAY_LIGHT}\n"
 
   printf "${NC}";
 
